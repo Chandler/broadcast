@@ -16,6 +16,8 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 @@members       = @@config['members']
 @@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
+
+set :port, 80
 post '/incoming' do
   if !params[:From]
     status 404
@@ -75,6 +77,6 @@ def is_over_message_limit sender_name
   last_message_time = @@store[sender_name]
   return false if !last_message_time 
   delta = Time.now.to_i - last_message_time.to_i
-  puts "sender_name",delta,  delta < @@config['rate_limit'].to_i 
+  puts "sender_name",delta, delta < @@config['rate_limit'].to_i 
   delta < @@config['rate_limit'].to_i
 end

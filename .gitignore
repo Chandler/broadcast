@@ -3,3 +3,4 @@ moneta/*
 test_moneta/*
 *.log
 .rvmrc
+aws.txt
