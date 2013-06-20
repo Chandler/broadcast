@@ -58,7 +58,6 @@ end
 
 def send_message(message, recipient_number)
   @@logger.info("recipient: #{recipient_number}, message: #{message}")
-  message = message[0..320] #max length two text messages.
   @@client.account.sms.messages.create(
     :body => message,
     :to =>   recipient_number,
