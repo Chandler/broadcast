@@ -1,0 +1,13 @@
+#one week in seconds
+rate_limit: 604800 
+twilio:
+  from_number: 2084024500
+  account_sid: ''
+  auth_token: ''
+members:
+  12089912446: cats
+  12089912789: dogs
+  12089312789: apple
+  12089348789: starcraft
+  12239912789: facebook
+

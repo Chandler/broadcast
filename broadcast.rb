@@ -18,8 +18,7 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 
 post '/incoming' do
   if !params[:From]
-    @@logger.info "Bad request"
-    return
+    status 404
   end
 
   message       = params[:Body]
@@ -28,14 +27,18 @@ post '/incoming' do
 
   if !sender_name
     response = PERMISSION_ERROR
+    status 404
   elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
+    status 404
   else #lgtm let's do this
     response = message_everyone(sender_number, sender_name, message)
+    status 200
   end
 
   @@store[sender_name] = Time.now.to_i
   send_message(response, sender_number)
+  response
 end
 
 def message_everyone sender_number, sender_name, message
@@ -46,6 +49,7 @@ def message_everyone sender_number, sender_name, message
   begin
     @@members.each_key do |member_number|
       if member_number != sender_number
+        puts member_number
         send_message(message, member_number)
         successful_deliveries = successful_deliveries + 1
       end
@@ -57,7 +61,9 @@ def message_everyone sender_number, sender_name, message
 end
 
 def send_message(message, recipient_number)
-  @@logger.info("recipient: #{recipient_number}, message: #{message}")
+  @@logger.info("number: #{recipient_number}, message: #{message}")
+
+  return if ENV['RACK_ENV'] == 'test'
   @@client.account.sms.messages.create(
     :body => message,
     :to =>   recipient_number,
@@ -68,7 +74,7 @@ end
 def is_over_message_limit sender_name
   last_message_time = @@store[sender_name]
   return false if !last_message_time 
-
   delta = Time.now.to_i - last_message_time.to_i
+  puts "sender_name",delta,  delta < @@config['rate_limit'].to_i 
   delta < @@config['rate_limit'].to_i
 end

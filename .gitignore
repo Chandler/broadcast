@@ -1,3 +1,5 @@
 config.yml
 moneta/*
+test_moneta/*
 *.log
+.rvmrc
