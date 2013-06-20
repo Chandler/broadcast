@@ -1,7 +1,7 @@
 #one week in seconds
 rate_limit: 604800 
 twilio:
-  from_number: 2084024500
+  from_number: 2084024501
   account_sid: ''
   auth_token: ''
 members:
