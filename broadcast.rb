@@ -35,7 +35,7 @@ post '/incoming' do
     response = message_everyone(sender_number, sender_name, message)
   end
 
-  @@store['sender'] = message
+  @@store[sender_name] = Time.now.to_i
   send_message(response, sender_number)
 end
 
@@ -60,17 +60,18 @@ end
 def send_message(message, recipient_number)
   @@logger.info("recipient: #{recipient_number}, message: #{message}")
   message = message[0..320] #max length two text messages.
-
-  # @@client.account.sms.messages.create(
-  #   :body => message,
-  #   :to =>   recipient_number,
-  #   :from => @@twilio_config['from_number']
-  # )
+  @@client.account.sms.messages.create(
+    :body => message,
+    :to =>   recipient_number,
+    :from => @@twilio_config['from_number']
+  )
 end
 
-def is_over_message_limit sender
-  last_message_time = @@store[sender]
-  return false if !!last_message_time 
+def is_over_message_limit sender_name
+  last_message_time = @@store[sender_name]
+  puts "store"
+  puts @@store[sender_name] 
+  return false if !last_message_time 
 
   delta = Time.now.to_i - last_message_time.to_i
   delta < @@config['rate_limit'].to_i
