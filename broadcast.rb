@@ -1,45 +1,57 @@
 require 'rubygems'
 require 'twilio-ruby'
 require 'sinatra'
-require 'psych' #yaml
 require 'moneta'
+require 'logging'
 
 SALUTATION               = "#RWEN"
 PERMISSION_ERROR         = "Ah ah ah, you didn't say the magic word"
 RATE_LIMIT_ERROR         = "oops, you already used a broadcast this week. Don't be selfish"
 DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 
-@store         = Moneta.new(:File, :dir => 'moneta')
-@config        = Psych.load_file('config.yml')
-@twilio_config = @config['twilio']
-@members       = @config['members']
-@client        = Twilio::REST::Client.new @twilio_config['account_sid'], @twilio_config['auth_token']
+@@logger        = Logging.logger(STDOUT)
+@@store         = Moneta.new(:File, :dir => 'moneta')
+@@config        = Psych.load_file('config.yml')
+@@twilio_config = @@config['twilio']
+@@members       = @@config['members']
+@@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
-get '/incoming' do
-  return if !params[:From]
+
+
+
+
+
+
+post '/incoming' do
+  if !params[:From]
+    @@logger.info "Bad request"
+    return
+  end
+
   message       = params[:Body]
-  sender_number = params[:From]
-  sender_name   = @members[sender_number]
+  sender_number = params[:From].to_i
+  sender_name   = @@members[sender_number]
 
-  if !!sender_name
+  if !sender_name
+    puts "hi", sender_name
     response = PERMISSION_ERROR
   elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
   else #lgtm let's do this
-    response = message_everyone(phone_number, message)
+    response = message_everyone(sender_number, message)
   end
 
-  @store['sender'] = message
+  @@store['sender'] = message
   send_message(response, sender_number)
 end
 
-def message_everyone sender_name
+def message_everyone sender_name, message
   message = message[0..320] #max length two text messages.
   message = "@#{sender_name}: " + message + "- #{SALUTATION}"
   successful_deliveries = 0
   
   begin
-    @members.each_key do |member_number|
+    @@members.each_key do |member_number|
       send_message(message, member_number)
       successful_deliveries = successful_deliveries = + 1
     end
@@ -50,18 +62,19 @@ def message_everyone sender_name
 end
 
 def send_message(message, recipient_number)
+  puts "sending message to ", recipient_number
   message = message[0..320] #max length two text messages.
-  @client.account.sms.messages.create(
-    :body => message,
-    :to =>   recipient_number,
-    :from => @twilio_config['from_number']
-  )
+  # @@client.account.sms.messages.create(
+  #   :body => message,
+  #   :to =>   recipient_number,
+  #   :from => @@twilio_config['from_number']
+  # )
 end
 
 def is_over_message_limit sender
-  last_message_time = @store[sender]
+  last_message_time = @@store[sender]
   return false if !!last_message_time 
 
   delta = Time.now.to_i - last_message_time.to_i
-  delta < @config['rate_limit'].to_i
+  delta < @@config['rate_limit'].to_i
 end
