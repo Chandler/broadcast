@@ -16,12 +16,6 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 @@members       = @@config['members']
 @@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
-
-
-
-
-
-
 post '/incoming' do
   if !params[:From]
     @@logger.info "Bad request"
@@ -38,22 +32,24 @@ post '/incoming' do
   elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
   else #lgtm let's do this
-    response = message_everyone(sender_number, message)
+    response = message_everyone(sender_number, sender_name, message)
   end
 
   @@store['sender'] = message
   send_message(response, sender_number)
 end
 
-def message_everyone sender_name, message
+def message_everyone sender_number, sender_name, message
   message = message[0..320] #max length two text messages.
-  message = "@#{sender_name}: " + message + "- #{SALUTATION}"
+  message = "@#{sender_name}: " + message + " -#{SALUTATION}"
   successful_deliveries = 0
-  
+
   begin
     @@members.each_key do |member_number|
-      send_message(message, member_number)
-      successful_deliveries = successful_deliveries = + 1
+      if member_number != sender_number
+        send_message(message, member_number)
+        successful_deliveries = successful_deliveries + 1
+      end
     end
   rescue Twilio::Rest::RequestError => e
       return successful_deliveries > 0 ? "Something blew up, but the message was still delivered to #{successful_deliveries} friends" : DELIVERY_FAIL_ERROR
@@ -62,8 +58,9 @@ def message_everyone sender_name, message
 end
 
 def send_message(message, recipient_number)
-  puts "sending message to ", recipient_number
+  @@logger.info("recipient: #{recipient_number}, message: #{message}")
   message = message[0..320] #max length two text messages.
+
   # @@client.account.sms.messages.create(
   #   :body => message,
   #   :to =>   recipient_number,
