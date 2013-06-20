@@ -27,7 +27,6 @@ post '/incoming' do
   sender_name   = @@members[sender_number]
 
   if !sender_name
-    puts "hi", sender_name
     response = PERMISSION_ERROR
   elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
@@ -69,8 +68,6 @@ end
 
 def is_over_message_limit sender_name
   last_message_time = @@store[sender_name]
-  puts "store"
-  puts @@store[sender_name] 
   return false if !last_message_time 
 
   delta = Time.now.to_i - last_message_time.to_i
