@@ -17,7 +17,7 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 @@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
 
-set :port, 80
+
 post '/incoming' do
   if !params[:From]
     status 404
