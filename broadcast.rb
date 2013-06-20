@@ -35,10 +35,10 @@ post '/incoming' do
     status 404
   else #lgtm let's do this
     response = message_everyone(sender_number, sender_name, message)
+    @@store[sender_name] = Time.now.to_i
     status 200
   end
 
-  @@store[sender_name] = Time.now.to_i
   send_message(response, sender_number)
   response
 end
