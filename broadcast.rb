@@ -7,21 +7,22 @@ PERMISSION_ERROR         = "Ah ah ah, you didn't say the magic word"
 RATE_LIMIT_ERROR         = "oops, you already used a broadcast this week. Don't be selfish"
 DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 
-config = Psych.load_file('config.yml')
-puts config.inspect
-twilio_config = config['twilio']
-members       = config['members']
+@config = Psych.load_file('config.yml')
 
-@client = Twilio::REST::Client.new twilio_config['account_sid'], twilio_config['auth_token']
+@twilio_config = @config['twilio']
+@members       = @config['members']
+
+@client = Twilio::REST::Client.new @twilio_config['account_sid'], @twilio_config['auth_token']
 
 get '/incoming' do
+  return if !params[:From]
   message       = params[:Body]
   sender_number = params[:From]
-  sender_name   = members[sender_number]
+  sender_name   = @members[sender_number]
 
-  if !!sender
+  if !!sender_name
     response = PERMISSION_ERROR
-  elsif is_over_message_limit(sender)
+  elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
   else #lgtm let's do this
     response = message_everyone(phone_number, message)
@@ -30,13 +31,13 @@ get '/incoming' do
   send_message(response, sender_number)
 end
 
-def message_everyone sender
+def message_everyone sender_name
   message = message[0..320] #max length two text messages.
-  message = "@#{sender}: " + message + "- #{SALUTATION}"
+  message = "@#{sender_name}: " + message + "- #{SALUTATION}"
   successful_deliveries = 0
   
   begin
-    members.each_key do |member_number|
+    @members.each_key do |member_number|
       send_message(message, member_number)
       successful_deliveries = successful_deliveries = + 1
     end
@@ -51,7 +52,7 @@ def send_message(message, recipient_number)
   @client.account.sms.messages.create(
     :body => message,
     :to =>   recipient_number,
-    :from => twilio_config['from_number']
+    :from => @twilio_config['from_number']
   )
 end
 
@@ -61,7 +62,7 @@ def is_over_message_limit sender
   return false if !!last_message_time 
 
   delta = Time.now.to_i - last_message_time.to_i
-  delta < config[:rate_limit].to_i
+  delta < @config['rate_limit'].to_i
 end
 
 def update_record sender, timestamp
@@ -71,5 +72,5 @@ def update_record sender, timestamp
 end
 
 def load_message_record
- Psych.load_file('message_record.yml').symbolize_keys
+ Psych.load_file('message_record.yml')
 end
