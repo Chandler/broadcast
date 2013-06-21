@@ -20,17 +20,17 @@ class BroadcastTest < Test::Unit::TestCase
     Sinatra::Application
   end
 
-  # def test_bad_request
-  #   post '/incoming', params={:bad_key => "abc"}
-  #   assert_equal 404, last_response.status
-  # end
+  def test_bad_request
+    post '/incoming', params={:bad_key => "abc"}
+    assert_equal 404, last_response.status
+  end
 
-  # def test_unknown_sender
-  #   @@store.clear()
-  #   post '/incoming', params={:From => 333334234, :Body => "I'm a random creeper"}
-  #   assert_equal 404, last_response.status
-  #   assert_equal PERMISSION_ERROR, last_response.body
-  # end
+  def test_unknown_sender
+    @@store.clear()
+    post '/incoming', params={:From => 333334234, :Body => "I'm a random creeper"}
+    assert_equal 404, last_response.status
+    assert_equal PERMISSION_ERROR, last_response.body
+  end
 
   def test_known_sender
     @@store.clear()
@@ -41,29 +41,29 @@ class BroadcastTest < Test::Unit::TestCase
     assert_equal expected_response, last_response.body
   end
 
-  # def test_over_message_limit
-  #   @@store.clear()
-  #   sender_number = 12239912789
-  #   sender_name = @@members[12239912789]
+  def test_over_message_limit
+    @@store.clear()
+    sender_number = 12239912789
+    sender_name = @@members[12239912789]
     
-  #   #most recent message was just now, should fail
-  #   @@store[sender_name] = Time.now.to_i
-  #   post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
-  #   assert_equal 404, last_response.status
-  #   assert_equal RATE_LIMIT_ERROR, last_response.body
+    #most recent message was just now, should fail
+    @@store[sender_name] = Time.now.to_i
+    post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
+    assert_equal 404, last_response.status
+    assert_equal RATE_LIMIT_ERROR, last_response.body
     
-  #   #time between now and recent message is 100 seconds longer than the rate limit
-  #   @@store[sender_name] = Time.now.to_i - @@config['rate_limit'] - 100
-  #   post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
-  #   assert_equal 200, last_response.status
+    #time between now and recent message is 100 seconds longer than the rate limit
+    @@store[sender_name] = Time.now.to_i - @@config['rate_limit'] - 100
+    post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
+    assert_equal 200, last_response.status
     
     
-  #   #time between now and recent message is 100 seconds inside than the rate limit
-  #   @@store[sender_name] = Time.now.to_i - @@config['rate_limit'] + 100
-  #   post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
-  #   assert_equal 404, last_response.status
-  #   assert_equal RATE_LIMIT_ERROR, last_response.body
-  # end
+    #time between now and recent message is 100 seconds inside than the rate limit
+    @@store[sender_name] = Time.now.to_i - @@config['rate_limit'] + 100
+    post '/incoming', params={:From => sender_number, :Body => "I'm in the club"}
+    assert_equal 404, last_response.status
+    assert_equal RATE_LIMIT_ERROR, last_response.body
+  end
 
   @@store.clear()
 end
