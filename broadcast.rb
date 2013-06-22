@@ -35,6 +35,7 @@ end
 post '/incoming' do
   if !params[:From]
     status 404
+    return
   end
 
   message       = params[:Body]
