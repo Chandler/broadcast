@@ -23,7 +23,7 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 
 set :port, 3000
 
-#uptime check endpoint
+#endpoint for pingdom uptime monitoring.
 get '/up' do
   "up"
 end
