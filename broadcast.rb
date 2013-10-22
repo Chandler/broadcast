@@ -84,7 +84,7 @@ end
 def send_message(message, recipient_number)
   begin
     if ENV['RACK_ENV'] != 'test' #test env should never send real texts
-      @@client.account.sms.messages.create(
+      @@client.account.messages.create(
         :body => message,
         :to =>   recipient_number,
         :from => @@twilio_config['from_number']
@@ -93,6 +93,7 @@ def send_message(message, recipient_number)
     log({:type => "outgoing_message_success", :to_number => recipient_number, :body => message})
     return true
   rescue Twilio::REST::RequestError => e
+    log({:exception => e.inspect})
     log({:type => "outgoing_message_failure", :to_number => recipient_number, :body => message})
     return false
   end
