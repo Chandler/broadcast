@@ -23,7 +23,7 @@ OPT_OUT_RESPONSE         = "as you wish"
 @@config        = Psych.load_file('config.yml')
 @@twilio_config = @@config['twilio']
 @@members       = @@config['members']
-@@client        = Twilio::REST::Clizent.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
+@@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
 set :port, 3000
 
