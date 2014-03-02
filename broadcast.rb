@@ -52,10 +52,7 @@ post '/incoming' do
     status 404
   elsif is_opt_out_message(message)
     #delete opting out member from the config options
-    @@members.delete('sender_number')
-    puts @@members
-    puts "\n\n"
-    puts @@config
+    @@members.delete(sender_number)
     #save changes to config file
     File.open('config.yml', 'w+') { |file| file.write(Psych.dump(@@config)) }
     response = OPT_OUT_RESPONSE
@@ -74,25 +71,25 @@ post '/incoming' do
 end
 
 def message_everyone sender_number, sender_name, message
-  # message = message[0..320] #max length two text messages.
-  # message = "@#{sender_name}: " + message + "  #{SALUTATION}"
-  # successful_deliveries = 0
+  message = message[0..320] #max length two text messages.
+  message = "@#{sender_name}: " + message + "  #{SALUTATION}"
+  successful_deliveries = 0
 
-  # @@members.each_key do |member_number|
-  #   if member_number != sender_number
-  #     if send_message(message, member_number)
-  #       successful_deliveries = successful_deliveries + 1
-  #     end
-  #   end
-  # end
+  @@members.each_key do |member_number|
+    if member_number != sender_number
+      if send_message(message, member_number)
+        successful_deliveries = successful_deliveries + 1
+      end
+    end
+  end
 
-  # if successful_deliveries == @@members.length - 1
-  #   return "Great success, your message was delivered to #{successful_deliveries} friends"
-  # elsif successful_deliveries > 0
-  #   return "Something blew up, but the message was still delivered to #{successful_deliveries} friends"
-  # else
-  #   return DELIVERY_FAIL_ERROR
-  # end
+  if successful_deliveries == @@members.length - 1
+    return "Great success, your message was delivered to #{successful_deliveries} friends"
+  elsif successful_deliveries > 0
+    return "Something blew up, but the message was still delivered to #{successful_deliveries} friends"
+  else
+    return DELIVERY_FAIL_ERROR
+  end
 end
 
 def send_message(message, recipient_number)
