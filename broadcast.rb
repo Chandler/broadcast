@@ -4,11 +4,13 @@ require 'sinatra'
 require 'moneta'
 require 'logging'
 
+set :protection, :origin_whitelist => ['chrome-extension://fdmmgilgnpjigdojojpjoooidkmcomcm']
+
 SALUTATION               = "#RWEN"
 PERMISSION_ERROR         = "Ah ah ah, you didn't say the magic word"
 RATE_LIMIT_ERROR         = "oops, you already used a broadcast this week. Don't be that person"
 DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
-OPT_OUT_MESSAGES         = ["stop", "rwen is dead"]
+OPT_OUT_MESSAGES         = ["stop", "test_opt_out"]
 OPT_OUT_RESPONSE         = "as you wish"
 
 @@logger = Logging.logger['broadcast_logger']
@@ -56,6 +58,8 @@ post '/incoming' do
     @@members.delete('sender_number')
     #save changes to config file
     File.open('config.yml', 'w+') { |file| file.write(Pysch.dump(@@config)) }
+    response = OPT_OUT_RESPONSE
+    status 200
   else #lgtm let's do this
     response = message_everyone(sender_number, sender_name, message)
     @@store[sender_name] = Time.now.to_i
