@@ -54,7 +54,7 @@ post '/incoming' do
     #delete opting out member from the config options
     @@members.delete('sender_number')
     #save changes to config file
-    File.open('config.yml', 'w+') { |file| file.write(Pysch.dump(@@config)) }
+    File.open('config.yml', 'w+') { |file| file.write(Psych.dump(@@config)) }
     response = OPT_OUT_RESPONSE
     status 200
   elsif is_over_message_limit(sender_name)
