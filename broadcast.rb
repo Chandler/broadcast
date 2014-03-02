@@ -50,9 +50,6 @@ post '/incoming' do
   if !sender_name
     response = PERMISSION_ERROR
     status 404
-  elsif is_over_message_limit(sender_name)
-    response = RATE_LIMIT_ERROR
-    status 404
   elsif is_opt_out_message(message)
     #delete opting out member from the config options
     @@members.delete('sender_number')
@@ -60,6 +57,9 @@ post '/incoming' do
     File.open('config.yml', 'w+') { |file| file.write(Pysch.dump(@@config)) }
     response = OPT_OUT_RESPONSE
     status 200
+  elsif is_over_message_limit(sender_name)
+    response = RATE_LIMIT_ERROR
+    status 404
   else #lgtm let's do this
     response = message_everyone(sender_number, sender_name, message)
     @@store[sender_name] = Time.now.to_i
