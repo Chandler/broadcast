@@ -8,6 +8,8 @@ SALUTATION               = "#RWEN"
 PERMISSION_ERROR         = "Ah ah ah, you didn't say the magic word"
 RATE_LIMIT_ERROR         = "oops, you already used a broadcast this week. Don't be that person"
 DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
+OPT_OUT_MESSAGES         = ["stop", "rwen is dead"]
+OPT_OUT_RESPONSE         = "as you wish"
 
 @@logger = Logging.logger['broadcast_logger']
 @@logger.add_appenders(
@@ -19,7 +21,7 @@ DELIVERY_FAIL_ERROR      = "fail_whale.jpg : /"
 @@config        = Psych.load_file('config.yml')
 @@twilio_config = @@config['twilio']
 @@members       = @@config['members']
-@@client        = Twilio::REST::Client.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
+@@client        = Twilio::REST::Clizent.new @@twilio_config['account_sid'], @@twilio_config['auth_token']
 
 set :port, 3000
 
@@ -49,6 +51,11 @@ post '/incoming' do
   elsif is_over_message_limit(sender_name)
     response = RATE_LIMIT_ERROR
     status 404
+  elsif is_opt_out_message(message)
+    #delete opting out member from the config options
+    @@members.delete('sender_number')
+    #save changes to config file
+    File.open('config.yml', 'w+') { |file| file.write(Pysch.dump(@@config)) }
   else #lgtm let's do this
     response = message_everyone(sender_number, sender_name, message)
     @@store[sender_name] = Time.now.to_i
@@ -60,25 +67,25 @@ post '/incoming' do
 end
 
 def message_everyone sender_number, sender_name, message
-  message = message[0..320] #max length two text messages.
-  message = "@#{sender_name}: " + message + "  #{SALUTATION}"
-  successful_deliveries = 0
+  # message = message[0..320] #max length two text messages.
+  # message = "@#{sender_name}: " + message + "  #{SALUTATION}"
+  # successful_deliveries = 0
 
-  @@members.each_key do |member_number|
-    if member_number != sender_number
-      if send_message(message, member_number)
-        successful_deliveries = successful_deliveries + 1
-      end
-    end
-  end
+  # @@members.each_key do |member_number|
+  #   if member_number != sender_number
+  #     if send_message(message, member_number)
+  #       successful_deliveries = successful_deliveries + 1
+  #     end
+  #   end
+  # end
 
-  if successful_deliveries == @@members.length - 1
-    return "Great success, your message was delivered to #{successful_deliveries} friends"
-  elsif successful_deliveries > 0
-    return "Something blew up, but the message was still delivered to #{successful_deliveries} friends"
-  else
-    return DELIVERY_FAIL_ERROR
-  end
+  # if successful_deliveries == @@members.length - 1
+  #   return "Great success, your message was delivered to #{successful_deliveries} friends"
+  # elsif successful_deliveries > 0
+  #   return "Something blew up, but the message was still delivered to #{successful_deliveries} friends"
+  # else
+  #   return DELIVERY_FAIL_ERROR
+  # end
 end
 
 def send_message(message, recipient_number)
@@ -97,6 +104,10 @@ def send_message(message, recipient_number)
     log({:type => "outgoing_message_failure", :to_number => recipient_number, :body => message})
     return false
   end
+end
+
+def is_opt_out_message message
+  OPT_OUT_MESSAGES.include? message
 end
 
 def is_over_message_limit sender_name
